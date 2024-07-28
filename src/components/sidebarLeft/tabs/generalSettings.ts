@@ -34,9 +34,25 @@ import {joinDeepPath} from '../../../helpers/object/setDeepProperty';
 export class RangeSettingSelector {
   public container: HTMLDivElement;
   public valueContainer: HTMLElement;
+  public doubleSideProgress: HTMLElement;
   private range: RangeSelector;
+  private valueDiv: HTMLDivElement;
+
+  public updateFakeProgress = (value: number) => {
+    if(!this.doubleSideProgress) {
+      return;
+    }
+    this.doubleSideProgress.style.left = value >= 0 ? '50%' : `${50 - Math.abs(value)}%`;
+    this.doubleSideProgress.style.width = `${ Math.abs(value)}%`;
+  }
 
   public onChange: (value: number) => void;
+
+  public update = (value: number) => {
+    this.valueDiv.innerText = '' + value;
+    this.range.setFilled(value);
+    this.range.setProgress(value);
+  }
 
   constructor(
     name: LangPackKey,
@@ -44,11 +60,15 @@ export class RangeSettingSelector {
     initialValue: number,
     minValue: number,
     maxValue: number,
-    writeValue = true
+    writeValue = true,
+    symmetrical = false
   ) {
     const BASE_CLASS = 'range-setting-selector';
     this.container = document.createElement('div');
     this.container.classList.add(BASE_CLASS);
+    if(symmetrical) {
+      this.container.classList.add('double-sided');
+    }
 
     const details = document.createElement('div');
     details.classList.add(BASE_CLASS + '-details');
@@ -57,14 +77,14 @@ export class RangeSettingSelector {
     nameDiv.classList.add(BASE_CLASS + '-name');
     _i18n(nameDiv, name);
 
-    const valueDiv = this.valueContainer = document.createElement('div');
-    valueDiv.classList.add(BASE_CLASS + '-value');
+    this.valueDiv = this.valueContainer = document.createElement('div');
+    this.valueDiv.classList.add(BASE_CLASS + '-value');
 
     if(writeValue) {
-      valueDiv.innerHTML = '' + initialValue;
+      this.valueDiv.innerHTML = '' + initialValue;
     }
 
-    details.append(nameDiv, valueDiv);
+    details.append(nameDiv, this.valueDiv);
 
     this.range = new RangeSelector({
       step,
@@ -78,14 +98,30 @@ export class RangeSettingSelector {
           this.onChange(value);
         }
 
+        if(symmetrical) {
+          this.updateFakeProgress(value);
+        }
+
         if(writeValue) {
           // console.log('font size scrub:', value);
-          valueDiv.innerText = '' + value;
+          this.valueDiv.innerText = '' + value;
         }
       }
     });
 
     this.container.append(details, this.range.container);
+
+    if(symmetrical) {
+      const line = this.container.getElementsByClassName('progress-line')[0];
+      this.doubleSideProgress = document.createElement('div');
+      this.doubleSideProgress.classList.add('fake-progress');
+      line.append(this.doubleSideProgress);
+      if(initialValue === 0) {
+        const lineFilled = line.getElementsByClassName('progress-line__filled')[0] as HTMLElement;
+        lineFilled.style.width = '50%';
+      }
+      this.updateFakeProgress(initialValue);
+    }
   }
 }
 

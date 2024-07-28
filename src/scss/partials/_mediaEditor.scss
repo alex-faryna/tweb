@@ -1,0 +1,854 @@
+/*
+ * https://github.com/morethanwords/tweb
+ * Copyright (C) 2019-2021 Eduard Kuzmenko
+ * https://github.com/morethanwords/tweb/blob/master/LICENSE
+ */
+
+$inactive-opacity: .4;
+
+.media-editor {
+  z-index: 10;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, .88);
+  /* color: var(--secondary-text-color); */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+
+  svg, .tgico {
+    color: #AAAAAA;
+  }
+
+  .range-setting-selector-name,
+  .inline-icon {
+    color: white !important;
+  }
+
+  .range-setting-selector-value {
+    color: var(--primary-color);
+  }
+
+  // color picker -> move to separate file
+  .input-field {
+    --surface-color: rgb(33, 33, 33);
+    --primary-text-color: white;
+  }
+
+  .editor-color-picker {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+
+    .color-picker {
+      width: 100%;
+      margin: unset;
+    }
+
+    .custom-picker {
+      padding-left: 4%;
+    }
+
+    .color-picker-sliders {
+      position: absolute;
+      width: 85%;
+      padding-left: 4%;
+      padding-top: 10px;
+      margin: unset;
+      top: 0;
+      left: 0;
+    }
+
+    .color-picker-inline-pick {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      height: 140px;
+
+      .color-picker-box {
+        height: 120px;
+        width: 200px;
+        overflow: visible;
+      }
+
+
+      .color-picker-inputs {
+        margin-left: auto;
+        flex-direction: column;
+
+        .input-field {
+          --height: 48px;
+          --padding: 0rem;
+          --padding-horizontal: 1rem;
+          width: 130px;
+          flex: unset;
+        }
+      }
+    }
+
+    .editor-dots-color-picker {
+      display: flex;
+      align-items: center;
+      justify-content: space-evenly;
+
+      .dot-color-inner {
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: block;
+        cursor: pointer;
+
+        &.custom {
+          overflow: hidden;
+          // if custom
+
+          &.selected {
+            box-sizing: border-box;
+            border: 2px solid rgba(black, 0.4);
+          }
+
+          img {
+            width: 100%;
+            height: 100%;
+            opacity: 1;
+            transition: opacity 1s ease-in-out;
+
+            &.hidden {
+              opacity: 0;
+            }
+          }
+        }
+      }
+
+      .dot-color-outer {
+        min-width: 40px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        transition: background-color 0.25s ease-in-out;
+      }
+    }
+  }
+
+  .paint-container {
+    padding: 0.5rem;
+  }
+
+  .crop-container {
+    gap: 0.5rem;
+  }
+  //
+
+  .popup-stars-transactions-contents {
+    width: 100%;
+    overflow-y: scroll;
+  }
+
+  .settings-container {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    overflow-y: scroll;
+    width: 100%;
+
+    &.filters {
+      padding-bottom: 5rem;
+    }
+  }
+
+  .range-setting-selector {
+    width: 100%;
+
+    .progress-line {
+      --height: 4px;
+      --thumb-size: 20px;
+    }
+  }
+
+  .range-setting-selector.double-sided {
+    .progress-line__filled {
+      background: transparent;
+    }
+
+    .fake-progress {
+      background: var(--primary-color);
+      position: absolute;
+      height: 100%;
+      top: 0;
+      border-radius: 4px;
+    }
+  }
+
+  &__container {
+    display: flex;
+    align-items: center;
+    background: #212121;
+    height: 90%;
+    width: 90%;
+    min-height: 600px;
+    max-height: 1200px;
+  }
+
+  &__main-area {
+    width: 100%;
+    height: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: black;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+
+    .main-canvas-container {
+      width: 100%;
+      height: 100%;
+      transform: translate(0px, 0px) scale(1);
+      transition: transform 0.3s ease-in-out;
+      transform-origin: 0 0;
+      position: relative;
+
+      .main-canvas {
+        // when moving manually then remove this
+        // transition: transform 0.3s ease-in-out;
+        transform: rotate(0deg) scale(1);
+        // transition: transform 0.3s ease-out;
+      }
+
+      .canvas-view-helper,
+      .center-crop-area {
+        // transition: transform 0.4s ease-in-out;
+      }
+
+      .canvas-hider {
+        opacity: 1;
+        position: absolute;
+        background: black;
+        transition: opacity 0.3s ease-in-out;
+      }
+
+      .canvas-view {
+        transform-origin: 100% 100%;
+      }
+
+      .center-crop-area,
+      .canvas-elem {
+        // transition: transform 0.3s ease-in-out,  filter 0.3s ease-in-out, max-width 0.3s ease-out, max-height 0.3s ease-out, top 0.3s ease-out, left 0.3s ease-out;
+      }
+
+      .canvas-elem {
+        transition: filter 0.3s ease-in-out;
+        // transition: transform 0.3s ease-in-out,  filter 0.3s ease-in-out, max-width 0.3s ease-out, max-height 0.3s ease-out, top 0.3s ease-out, left 0.3s ease-out;
+
+
+        //filter: brightness(50%);
+      }
+
+      .cropped-view-area {
+        transition: opacity 0.3s ease-in-out; //, max-width 0.3s ease-out, max-height 0.3s ease-out, top 0.3s ease-out, left 0.3s ease-out;
+      }
+
+      .canvas-crop-handlers {
+        position: absolute;
+        z-index: 1000;
+        border: 1px dashed white;
+        transform-origin: 0 0;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out; // , max-width 0.3s ease-out, max-height 0.3s ease-out, top 0.3s ease-out, left 0.3s ease-out;
+
+        .crop-handle {
+          z-index: 1000;
+          position: absolute;
+          background: white;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          cursor: pointer;
+
+          transform-origin: center;
+          scale: 2;
+
+          &.top {
+            top: -4px;
+          }
+
+          &.bottom {
+            bottom: -4px;
+          }
+
+          &.left {
+            left: -4px;
+          }
+
+          &.right {
+            right: -4px;
+          }
+        }
+      }
+
+      .cropped-view-area {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: transparent;
+        // mix-blend-mode: overlay;
+        transform-origin: 0 0;
+        // opacity: 1;
+        transition: opacity 0.3s ease-in-out;
+      }
+    }
+
+    .crop-resize-panel-container {
+      visibility: hidden;
+      position: absolute;
+      width: 100%;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-evenly;
+      color: white;
+
+      &.active {
+        visibility: visible;
+      }
+
+      .angle-marker {
+        position: absolute;
+        left: 50%;
+        top: 75%;
+        transform: translate(-50%, -50%);
+      }
+
+      .angle-container {
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        position: relative;
+      }
+
+      .angle {
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+
+        align-items: center;
+        gap: 1rem;
+        // mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.65) 45%,  rgba(0, 0, 0, 1) 50%, rgba(0, 0, 0, 0.65) 65%, rgba(0, 0, 0, 0) 100%);
+
+        .labels {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-evenly;
+
+          .label {
+            min-width: 35px;
+            width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.7;
+
+            &.selected {
+              opacity: 1;
+              font-weight: bolder;
+              font-size: 1.05em;
+            }
+          }
+        }
+      }
+    }
+
+    .media-editor-sticker {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      cursor: move;
+      top: 0;
+      left: 0;
+
+      overflow:auto;
+      resize: both;
+
+      &.selected {
+        border: 1px solid red;
+      }
+    }
+
+    & > * {
+      flex: 0 0 auto;
+    }
+  }
+
+  &__settings {
+    min-width: 400px;
+    max-width: 400px;
+    width: 400px;
+    flex: 1 0 30%;
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+
+    .menu-horizontal-div {
+      border-bottom: none;
+    }
+
+    .btn-corner {
+      --translateY: 0;
+
+      .tgico {
+        color: white;
+      }
+    }
+  }
+
+  .tool-picker {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+
+    &.grid {
+      display: grid;
+      grid-template-columns: auto auto;
+
+      .rotate {
+        rotate: 90deg;
+      }
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    &.crop-settings .tool {
+      gap: 1.5rem;
+    }
+
+    &:not(.crop-settings) {
+      svg, img {
+        transition: margin-left 0.25s ease-in-out;
+        margin-left: -1.5rem;
+      }
+    }
+
+    .tool {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      padding: 0.75rem 1.25rem;
+      position: relative;
+      overflow: hidden;
+      border-radius: 10px;
+      transition: background-color 0.15s ease-in;
+      cursor: pointer;
+
+      &:not(.selected):hover {
+        background: var(--light-secondary-text-color);
+      }
+
+      &.font {
+        height: 48px;
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 20px;
+      }
+
+      .tool-media {
+        display: flex;
+        align-items: center;
+        height: 20px;
+        mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0rem, rgba(0, 0, 0, 0) 0.75rem, rgba(0, 0, 0, 1) 2rem);
+      }
+
+      &.selected {
+        background: #2B2B2B;
+
+        svg, img {
+          margin-left: 0;
+        }
+      }
+    }
+  }
+
+  .font-settings {
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .triplet-buttons {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+
+    .button {
+      width: 54px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      border-radius: 10px;
+      justify-content: center;
+      background: transparent;
+      transition: background-color 0.15s ease-in;
+
+      &.selected {
+        background: #2B2B2B;
+      }
+    }
+  }
+
+  .emoji-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .tabs-tab.emoticons-container {
+    width: 100%;
+  }
+
+  .emoji-dropdown {
+    opacity: 1;
+    transform: scale(1);
+    position: relative;
+    display: block !important;
+    bottom: 0;
+    inset-inline-start: 0;
+    background: transparent;
+    --height: calc(100% - 5rem);
+    max-height: calc(100% - 5rem);
+    --width: 100%;
+    max-width: 100%;
+
+    .emoji-tabs {
+      display: none;
+    }
+
+    .emoticons-menu-wrapper {
+      border-color: transparent;
+    }
+
+    .emoticons-menu .menu-horizontal-div-item.active,
+    .emoticons-menu.menu-horizontal-div-item:hover,
+    .emoticons-menu .menu-horizontal-div-item:active {
+      background: #2B2B2B !important;
+    }
+
+    .emoticons-content .category-title {
+      color: #AAAAAA;
+      display: flex;
+      align-items: center;
+    }
+
+    .emoticons-search-container {
+      border-radius: 22px;
+    }
+
+    .input-search.emoticons-search-input-container {
+      background: #2B2B2B;
+    }
+  }
+
+  .popup-stars-transactions-contents {
+    height: 100%;
+
+    .popup-stars-transactions-content {
+      height: 100%;
+    }
+  }
+
+  // STICKER TRY // it hitnk its text
+
+  .stickers-container {
+    height: 100%;
+
+    .scrollable.scrollable-y {
+      position: relative;
+    }
+  }
+
+  @function stroke($stroke, $color) {
+    $shadow: ();
+    $from: $stroke*-1;
+    @for $i from $from through $stroke {
+      @for $j from $from through $stroke {
+        $shadow: append($shadow, $i*1px $j*1px 0 $color, comma);
+      }
+    }
+    @return $shadow;
+  }
+
+  @mixin stroke($stroke, $color) {
+    text-shadow: stroke($stroke, $color);
+  }
+
+  .ca2 {
+    position: absolute;
+    z-index: 10;
+    top:0;
+    left: 0;
+    border: 3px solid red;
+    background: yellow;
+  }
+
+  .text-helper {
+    text-align: center;
+    max-width: 400px;
+    display: block;
+    top: 300px;
+    white-space: pre-wrap;
+    position: absolute;
+
+    filter: url('#instagram');
+  }
+
+  .media-editor-text {
+    position: absolute;
+    border-radius: 5px;
+    font-weight: bolder;
+    color: yellow;
+    // white-space: pre-wrap;
+    display: inline;
+    // font-family: Noteworthy;
+    font-family: Papyrus;
+
+    &:first-of-type {
+      color: white;
+      top: 50px;
+      @include stroke(3, black);
+    }
+
+
+    // check their widths, if withs almost equal -> no
+
+
+    // chekc width, if yow width greater then 10 (or N), add border radius to that part
+    // (if you are not breatert then then no border radius)
+    &.test {
+      white-space: nowrap;
+      position: relative;
+      display: inline;
+      color: white;
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+      background: #FE4438;
+      font-size: 35px;
+      line-height: 50px;
+      font-style: italic;
+      padding: 0.25rem 1rem;
+      text-align:center;
+      border-radius: 10px;
+
+      &:last-child {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+      }
+    }
+  }
+
+  // STICKERS TRY END
+
+  .media-editor-stickers-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+
+    &.media-paint-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &.edit-text-panel {
+      // transition: background-color 0.3s ease-in-out;
+      background: rgba(black, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      .text-edit {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    &.disabled {
+      pointer-events: none;
+    }
+
+    .container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+
+      .media-editor-placed-sticker {
+        width: 200px;
+        height: 200px;
+        box-sizing: content-box;
+        position: absolute;
+        left: 0;
+        // padding-right: 100px;
+        // padding-bottom: 100px;
+        // treat this as a container, the resize and rotate handlers should be positioned absolutely (and maybe one for all of the objects bro)
+        top: 0;
+        transform: translate(0, 0);
+        // transition: transform 0.01s linear;
+        // will-change: transform;
+
+        &.text {
+          width: unset;
+          height: unset;
+        }
+
+        .sticker-container {
+          top: 0;
+          left: 0;
+          width: 200px;
+          height: 200px;
+          display: block;
+          position: relative;
+          transform: scale(1, 1);
+          transform-origin: 0 0;
+          // will-change: transform;
+          // transition: transform 0.01s linear;
+        }
+        // transform-origin: 0 0;
+        // border: 1px solid white; // 30%
+
+        /* border-style: solid;
+        border-width: 1px;
+        background-image: repeating-linear-gradient(to bottom, transparent, transparent 5px, white 5px, white 10px), repeating-linear-gradient(to right, transparent, transparent 5px, white 5px, white 10px); // , repeating-linear-gradient(to right, #617ca2, #617ca2 5px, #28487d 5px, #28487d 10px);
+        */
+
+
+        /* background-size: 5px 5px;
+        background-repeat: repeat;
+        background-image: conic-gradient(
+                        #28487d 90deg,
+                        #28487d 90deg 180deg,
+                        #617ca2 180deg 270deg,
+                        #28487d 270deg
+        ); */
+
+        // background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='white' stroke-width='2' stroke-dasharray='5%2c 12' stroke-dashoffset='43' stroke-linecap='square'/%3e%3c/svg%3e");
+
+        &.selected {
+          // find better option idk
+
+          // HERE: maybe do with 4 elements
+          & > div {
+            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='white' stroke-width='2' stroke-dasharray='8%2c 10' stroke-dashoffset='54' stroke-linecap='square'/%3e%3c/svg%3e");
+          }
+
+          //background: linear-gradient(to right, currentColor 0%, currentColor 50%, transparent 50%, transparent 100%) repeat-x left bottom;
+          //background-size: 3px 1px;
+
+          // border-image: linear-gradient(to right, transparent 33%, rgba(white, 0.5) 0%);
+
+
+          // background-position: bottom;
+          // background-size: 5px 1px;
+          // background-repeat: repeat-x;
+
+
+          // border-color: yellow;
+          .crop-handle {
+            position: absolute;
+            background: white;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+
+            &.top {
+              top: -4px;
+            }
+
+            &.bottom {
+              bottom: -4px;
+            }
+
+            &.left {
+              left: -4px;
+            }
+
+            &.right {
+              right: -4px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+body > .previ {
+  display: flex;
+  overflow: scroll;
+  flex-direction: column;
+  z-index: 10000;
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  height: 500px;
+}
+
+body > img,
+body > video,
+body > canvas {
+  display: block;
+  z-index: 10000;
+  position: fixed;
+  top: 10px;
+  left: 10px;
+
+
+  &.f1 {
+    left: 100px;
+  }
+
+  &.f2 {
+    top: 100px;
+
+  }
+
+  &.f3 {
+    left: 100px;
+    top: 100px;
+  }
+
+  &.f4 {
+    left: 200px;
+    top: 200px;
+  }
+
+}

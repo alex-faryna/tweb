@@ -22,7 +22,7 @@ import getGifDuration from '../../helpers/getGifDuration';
 import replaceContent from '../../helpers/dom/replaceContent';
 import createVideo from '../../helpers/dom/createVideo';
 import prepareAlbum from '../prepareAlbum';
-import {makeMediaSize} from '../../helpers/mediaSize';
+import {makeMediaSize, MediaSize} from '../../helpers/mediaSize';
 import {ThumbCache} from '../../lib/storages/thumbs';
 import onMediaLoad from '../../helpers/onMediaLoad';
 import apiManagerProxy from '../../lib/mtproto/mtprotoworker';
@@ -54,8 +54,14 @@ import {ChatType} from '../chat/chat';
 import pause from '../../helpers/schedulers/pause';
 import {Accessor, createRoot, createSignal, Setter} from 'solid-js';
 import SelectedEffect from '../chat/selectedEffect';
+
+import {AppMediaEditor} from '../appMediaEditor';
+import rtmpCallsController from '../../lib/calls/rtmpCallsController';
+import {render} from 'solid-js/web';
+
 import PopupMakePaid from './makePaid';
 import paymentsWrapCurrencyAmount from '../../helpers/paymentsWrapCurrencyAmount';
+
 
 type SendFileParams = SendFileDetails & {
   file?: File,
@@ -136,6 +142,31 @@ export default class PopupNewMedia extends PopupElement {
     return out;
   }
 
+  public editedImg: any;
+
+  public async openMediaEditor(peerId: PeerId) {
+    console.dir('btn');
+    console.dir(this.btnConfirmOnEnter);
+    const temp = this.btnConfirmOnEnter;
+    this.btnConfirmOnEnter = null;
+    // restore when closing the window
+    const pageEl = document.getElementById('page-chats') as HTMLDivElement;
+    if(pageEl.getElementsByClassName('media-editor').length) return;
+    // TODO: remove this, append the button to each image separately
+    const {files, willAttach, mediaContainer} = this;
+    console.info('will att', willAttach);
+    console.info('files', files);
+    console.info('this', this);
+    // ---
+    const close = (result: {img: boolean, data: any}) => {
+      const [editor] = Array.from(pageEl.getElementsByClassName('media-editor'));
+      this.editedImg = result;
+      editor?.remove?.();
+      this.btnConfirmOnEnter = temp;
+    }
+    render(() => AppMediaEditor({close, imageBlobUrl: willAttach.sendFileDetails[0].objectURL}), pageEl);
+  }
+
   private async construct(willAttachType: PopupNewMedia['willAttach']['type']) {
     this.willAttach = {
       type: willAttachType,
@@ -200,6 +231,19 @@ export default class PopupNewMedia extends PopupElement {
         text: 'SendAsFiles',
         onClick: () => this.changeType('document'),
         verify: () => this.files.length > 1 && this.willAttach.type !== 'document' && canSendDocs
+      }, {
+        icon: 'groupmedia',
+        text: 'Edit',
+        onClick: () => {
+          console.info('edit media');
+          this.openMediaEditor(324);
+        },
+        verify: () => {
+          console.info('dsfdsg');
+          console.info(this.willAttach);
+          console.info(this.willAttach);
+          return this.willAttach.type === 'media' && this.files.length === 1;
+        }
       }, {
         icon: 'groupmedia',
         text: 'Popup.Attach.GroupMedia',
@@ -745,14 +789,53 @@ export default class PopupNewMedia extends PopupElement {
         caption = entities = effect = undefined;
       }
 
+
+      const blb = this.editedImg;
+      console.info('bbbbl', blb);
+
+      const file = blb?.img ?
+        new File([blb?.data], 'filename.png', {type: 'image/png'}) :
+        new File([blb?.data], 'filename.mp4', {type: 'video/mp4'});
       const willSendPaidMedia = this.willSendPaidMedia();
 
       const d: SendFileDetails[] = sendFileParams.map((params) => {
-        return {
-          ...params,
-          file: params.scaledBlob || params.file,
-          spoiler: willSendPaidMedia ? undefined : !!params.mediaSpoiler
-        };
+        console.info('ppr', params);
+        console.info('pris', params.scaledBlob || params.file);
+        if(blb) {
+          if(blb.img) {
+            return {
+              ...params,
+              width: blb.width,
+              height: blb.height,
+              objectURL: URL.createObjectURL(blb.data),
+              file,
+              spoiler: willSendPaidMedia ? undefined : !!params.mediaSpoiler
+            };
+          } else {
+            return {
+              ...params,
+              width: blb.width,
+              height: blb.height,
+              objectURL: URL.createObjectURL(blb.data),
+              noSound: true,
+              duration: blb.duration,
+              thumb: {
+                blob: blb.thumb,
+                size: new MediaSize(blb.width, blb.height),
+                url: URL.createObjectURL(blb.thumb)
+              },
+              file,
+              spoiler: willSendPaidMedia ? undefined : !!params.mediaSpoiler
+
+            };
+          }
+        } else {
+          return {
+            ...params,
+            file: params.scaledBlob || params.file,
+            spoiler: willSendPaidMedia ? undefined : !!params.mediaSpoiler
+          };
+        }
       });
 
       const w = {
@@ -1099,6 +1182,8 @@ export default class PopupNewMedia extends PopupElement {
 
   private attachFiles() {
     const {files, willAttach, mediaContainer} = this;
+
+    console.info(willAttach);
 
     const oldSendFileDetails = willAttach.sendFileDetails.splice(0, willAttach.sendFileDetails.length);
     oldSendFileDetails.forEach((params) => {

@@ -16,6 +16,7 @@ import IS_WEB_ASSEMBLY_SUPPORTED from '../../environment/webAssemblySupport';
 import makeError from '../../helpers/makeError';
 import App from '../../config/app';
 import rootScope from '../rootScope';
+import {exportCallbacks} from '../../components/media-editor/generate/export-callbacks';
 import toArray from '../../helpers/array/toArray';
 
 export type LottieAssetName = 'EmptyFolder' | 'Folders_1' | 'Folders_2' |
@@ -73,6 +74,7 @@ export class LottieLoader {
           this.log('worker #' + i + ' ready');
 
           queryableWorker.addEventListener('frame', this.onFrame);
+          queryableWorker.addEventListener('render_all', this.onAllFrames);
           queryableWorker.addEventListener('loaded', this.onPlayerLoaded);
           queryableWorker.addEventListener('error', this.onPlayerError);
 
@@ -223,6 +225,10 @@ export class LottieLoader {
     this.log.debug('onPlayerLoaded');
     player.onLoad(frameCount, fps);
   };
+
+  private onAllFrames = (reqId: number, callback: any, ...args: any[]) => {
+    exportCallbacks.get(callback)([...args]);
+  }
 
   private onFrame = (reqId: number, frameNo: number, frame: Uint8ClampedArray | ImageBitmap) => {
     const player = this.players[reqId];
